@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>約車預約管理系統</title>
+    <style>
+        :root { --primary: #1a73e8; --bg: #f8f9fa; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; }
+        .form-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; margin-bottom: 5px; color: #333; }
+        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .btn-box { grid-column: 1 / -1; display: flex; gap: 10px; }
+        button { padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-save { background: var(--primary); color: white; flex: 2; }
+        .btn-reset { background: #6c757d; color: white; flex: 1; }
+        button:hover { opacity: 0.9; }
+
+        .cal-nav { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th { background: #f1f3f4; padding: 10px; border: 1px solid #ddd; }
+        td { border: 1px solid #ddd; height: 110px; vertical-align: top; padding: 5px; background: #fff; }
+        .day-num { font-weight: bold; color: #70757a; margin-bottom: 5px; }
+        .event { font-size: 12px; background: #e8f0fe; border-left: 3px solid var(--primary); padding: 3px; margin-bottom: 3px; border-radius: 3px; cursor: pointer; position: relative; }
+        .del-x { position: absolute; right: 2px; top: 2px; color: red; font-size: 14px; width: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🚗 約車管理系統</h2>
+    
+    <div class="form-grid">
+        <input type="hidden" id="editIdx" value="-1">
+        <div class="form-group">
+            <label>日期</label>
+            <input type="date" id="q_date">
+        </div>
+        <div class="form-group">
+            <label>預約者</label>
+            <select id="q_user">
+                <option>曜文</option><option>孟賢</option><option>甄蓮</option><option>榮顯</option>
+                <option>佳洪</option><option>之卉</option><option>冠毅</option><option>庭誼</option>
+                <option>沛璇</option><option>鈞智</option><option>祥玄</option><option>建良</option>
+                <option>凱令</option><option>靜怡</option><option>其他(請填於備註)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>行程時間</label>
+            <select id="q_time">
+                <option>上午</option><option>下午</option><option>全天</option>
+            </select>
+        </div>
+        <div class="form-group"><label>案件名稱</label><input type="text" id="q_case"></div>
+        <div class="form-group"><label>車牌</label><input type="text" id="q_car"></div>
+        <div class="form-group"><label>備註</label><input type="text" id="q_note"></div>
+        <div class="btn-box">
+            <button class="btn-save" onclick="doSave()" id="btnText">確認儲存</button>
+            <button class="btn-reset" onclick="doReset()">重設</button>
+        </div>
+    </div>
+
+    <div class="cal-nav">
+        <button onclick="moveMonth(-1)">◀ 上個月</button>
+        <h3 id="monthTitle">2026 年 1 月</h3>
+        <button onclick="moveMonth(1)">下個月 ▶</button>
+    </div>
+    <table id="calTable">
+        <thead><tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr></thead>
+        <tbody id="calBody"></tbody>
+    </table>
+</div>
+
+<script>
+    let data = JSON.parse(localStorage.getItem('myCarData')) || [];
+    let viewYear = 2026;
+    let viewMonth = 0; // 0-11
+
+    // 初始化日期為今天 (或是2026年1月1日)
+    document.getElementById('q_date').value = "2026-01-01";
+
+    function doSave() {
+        const idx = document.getElementById('editIdx').value;
+        const obj = {
+            date: document.getElementById('q_date').value,
+            user: document.getElementById('q_user').value,
+            time: document.getElementById('q_time').value,
+            case: document.getElementById('q_case').value,
+            car: document.getElementById('q_car').value,
+            note: document.getElementById('q_note').value
+        };
+
+        if(!obj.case) { alert("請輸入案件名稱"); return; }
+
+        if(idx === "-1") data.push(obj);
+        else data[idx] = obj;
+
+        localStorage.setItem('myCarData', JSON.stringify(data));
+        doReset();
+        render();
+    }
+
+    function doReset() {
+        document.getElementById('editIdx').value = "-1";
+        document.getElementById('q_case').value = "";
+        document.getElementById('q_car').value = "";
+        document.getElementById('q_note').value = "";
+        document.getElementById('btnText').innerText = "確認儲存";
+    }
+
+    function moveMonth(dir) {
+        viewMonth += dir;
+        if(viewMonth > 11) { viewMonth = 0; viewYear++; }
+        if(viewMonth < 0) { viewMonth = 11; viewYear--; }
+        render();
+    }
+
+    function render() {
+        const body = document.getElementById('calBody');
+        const title = document.getElementById('monthTitle');
+        body.innerHTML = "";
+        title.innerText = `${viewYear} 年 ${viewMonth + 1} 月`;
+
+        const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+        const lastDate = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+        let row = document.createElement("tr");
+        for(let i=0; i<firstDay; i++) row.appendChild(document.createElement("td"));
+
+        for(let d=1; d<=lastDate; d++) {
+            if(row.children.length === 7) {
+                body.appendChild(row);
+                row = document.createElement("tr");
+            }
+            const cell = document.createElement("td");
+            const dStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            cell.innerHTML = `<div class="day-num">${d}</div>`;
+
+            data.forEach((item, index) => {
+                if(item.date === dStr) {
+                    const div = document.createElement("div");
+                    div.className = "event";
+                    div.innerHTML = `[${item.time}] ${item.user}<span class="del-x" onclick="doDel(event, ${index})">×</span>`;
+                    div.onclick = () => doEdit(index);
+                    cell.appendChild(div);
+                }
+            });
+            row.appendChild(cell);
+        }
+        while(row.children.length < 7) row.appendChild(document.createElement("td"));
+        body.appendChild(row);
+    }
+
+    function doEdit(i) {
+        const item = data[i];
+        document.getElementById('q_date').value = item.date;
+        document.getElementById('q_user').value = item.user;
+        document.getElementById('q_time').value = item.time;
+        document.getElementById('q_case').value = item.case;
+        document.getElementById('q_car').value = item.car;
+        document.getElementById('q_note').value = item.note;
+        document.getElementById('editIdx').value = i;
+        document.getElementById('btnText').innerText = "更新修改";
+        window.scrollTo(0,0);
+    }
+
+    function doDel(e, i) {
+        e.stopPropagation();
+        if(confirm("確定刪除？")) {
+            data.splice(i, 1);
+            localStorage.setItem('myCarData', JSON.stringify(data));
+            render();
+        }
+    }
+
+    render();
+</script>
+
+</body>
+<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyAstWbl_m3LTigsNmIb_Ivn-f61fe-9dx8",
+    authDomain: "car-reserve-77481.firebaseapp.com",
+    projectId: "car-reserve-77481",
+    storageBucket: "car-reserve-77481.firebasestorage.app",
+    messagingSenderId: "320509130220",
+    appId: "1:320509130220:web:9dd685d906bec55b9cfcc9",
+    measurementId: "G-G4B91ZYEB5"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+</html>
