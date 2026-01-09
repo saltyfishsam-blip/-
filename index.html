@@ -355,6 +355,68 @@
 
     window.onload = renderCalendar;
 </script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+  import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-database.js";
 
+  // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAstWbl_m3LTigsNmIb_Ivn-f61fe-9dx8",
+  authDomain: "car-reserve-77481.firebaseapp.com",
+  projectId: "car-reserve-77481",
+  storageBucket: "car-reserve-77481.firebasestorage.app",
+  messagingSenderId: "320509130220",
+  appId: "1:320509130220:web:9dd685d906bec55b9cfcc9",
+  measurementId: "G-G4B91ZYEB5"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+  const firebaseConfig = {
+    apiKey: "你的API金鑰",
+    databaseURL: "https://car-reserve-7481-default-rtdb.firebaseio.com",
+    projectId: "car-reserve-77481",
+    // ... 其他欄位
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const dbRef = ref(db, 'orders'); // 資料儲存在 'orders' 路徑下
+
+  // 功能 A：新增約車單
+  window.submitOrder = () => {
+    const name = document.getElementById('name').value;
+    const time = document.getElementById('time').value;
+    if(name && time) {
+      push(dbRef, { name, time, timestamp: Date.now() });
+      alert("約車成功！");
+    }
+  };
+
+  // 功能 B：監聽資料庫，當有新單時自動更新 HTML 列表
+  onValue(dbRef, (snapshot) => {
+    const list = document.getElementById('orderList');
+    list.innerHTML = ""; // 清空舊列表
+    snapshot.forEach((childSnapshot) => {
+      const data = childSnapshot.val();
+      list.innerHTML += `<li>${data.time} - ${data.name} 已預約</li>`;
+    });
+  });
+</script>
+
+<input id="name" placeholder="姓名">
+<input id="time" type="datetime-local">
+<button onclick="submitOrder()">我要約車</button>
+
+<h3>目前約車名單</h3>
+<ul id="orderList"></ul>
 </body>
 </html>
