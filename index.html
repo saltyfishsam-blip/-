@@ -3,203 +3,358 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>約車預約管理系統</title>
+    <title>2026 智慧派車排程系統</title>
     <style>
-        :root { --primary: #1a73e8; --bg: #f8f9fa; }
-        body { font-family: "Microsoft JhengHei", sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px; }
-        .form-group { display: flex; flex-direction: column; }
-        label { font-weight: bold; margin-bottom: 5px; color: #333; }
-        input, select { padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-        .btn-box { grid-column: 1 / -1; display: flex; gap: 10px; }
-        button { padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-save { background: var(--primary); color: white; flex: 2; }
-        .btn-reset { background: #6c757d; color: white; flex: 1; }
-        button:hover { opacity: 0.9; }
+        /* 統一字體與基本設定 */
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #fbbc04;
+            --success-color: #34a853;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-main: #3c4043;
+            --text-sub: #70757a;
+            --font-family: "Segoe UI", "Microsoft JhengHei", "微軟正黑體", sans-serif;
+        }
 
-        .cal-nav { display: flex; justify-content: space-between; align-items: center; margin: 20px 0; }
-        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        th { background: #f1f3f4; padding: 10px; border: 1px solid #ddd; }
-        td { border: 1px solid #ddd; height: 110px; vertical-align: top; padding: 5px; background: #fff; }
-        .day-num { font-weight: bold; color: #70757a; margin-bottom: 5px; }
-        .event { font-size: 12px; background: #e8f0fe; border-left: 3px solid var(--primary); padding: 3px; margin-bottom: 3px; border-radius: 3px; cursor: pointer; position: relative; }
-        .del-x { position: absolute; right: 2px; top: 2px; color: red; font-size: 14px; width: 15px; text-align: center; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        .container {
+            display: flex;
+            gap: 25px;
+            max-width: 1200px;
+            width: 100%;
+            align-items: flex-start;
+        }
+
+        /* 左側表單美化 */
+        .booking-form {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            width: 320px;
+            position: sticky;
+            top: 20px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .booking-form h3 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            border-left: 4px solid var(--primary-color);
+            padding-left: 10px;
+            margin-bottom: 20px;
+        }
+
+        .form-group { margin-bottom: 15px; }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-sub);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 1.5px solid #dadce0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: var(--font-family);
+            transition: all 0.3s;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            font-family: var(--font-family);
+            transition: 0.3s;
+        }
+
+        #saveBtn { background: var(--primary-color); color: white; }
+        #saveBtn:hover { background: #1557b0; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(26,115,232,0.3); }
+
+        #cancelBtn { background: #f1f3f4; color: var(--text-main); display: none; }
+        #cancelBtn:hover { background: #e8eaed; }
+
+        /* 右側日曆美化 */
+        .calendar-container {
+            flex: 1;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e0e0e0;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .calendar-header h2 { margin: 0; font-size: 1.5rem; color: #202124; }
+        
+        .nav-btn {
+            background: none;
+            border: 1px solid #dadce0;
+            padding: 8px 16px;
+            color: var(--text-main);
+            border-radius: 6px;
+        }
+        .nav-btn:hover { background: #f8f9fa; border-color: #bdc1c6; }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            border-collapse: collapse;
+        }
+
+        .weekday {
+            text-align: center;
+            padding: 15px 0;
+            font-weight: 600;
+            color: var(--text-sub);
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .day {
+            min-height: 120px;
+            padding: 8px;
+            border: 0.5px solid #f1f3f4;
+            transition: background 0.2s;
+        }
+        .day:hover { background-color: #fafafa; }
+
+        .day-number {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            color: #5f6368;
+        }
+
+        /* 行程標籤樣式 */
+        .event {
+            font-size: 11px;
+            padding: 6px 8px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 3px solid rgba(0,0,0,0.2);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .event:hover { opacity: 0.85; transform: translateX(2px); }
+
+        .event-morning { background: #4285f4; } /* 藍色 */
+        .event-afternoon { background: #fbbc04; color: #3c4043; } /* 黃色 */
+        .event-allday { background: #34a853; } /* 綠色 */
+
     </style>
 </head>
 <body>
 
+<h2>🚗 2026 智慧派車管理系統</h2>
+
 <div class="container">
-    <h2>🚗 約車管理系統</h2>
-    
-    <div class="form-grid">
-        <input type="hidden" id="editIdx" value="-1">
+    <div class="booking-form">
+        <h3 id="formTitle">新增預約</h3>
+        <input type="hidden" id="editIndex" value="-1">
+        
         <div class="form-group">
             <label>日期</label>
-            <input type="date" id="q_date">
+            <input type="date" id="date" value="2026-01-09" min="2026-01-01" max="2026-12-31">
+        </div>
+        <div class="form-group">
+            <label>計畫案件名稱</label>
+            <input type="text" id="projectName" placeholder="請輸入案件名">
+        </div>
+        <div class="form-group">
+            <label>行程內容</label>
+            <input type="text" id="content" placeholder="目的地或事由">
         </div>
         <div class="form-group">
             <label>預約者</label>
-            <select id="q_user">
-                <option>曜文</option><option>孟賢</option><option>甄蓮</option><option>榮顯</option>
-                <option>佳洪</option><option>之卉</option><option>冠毅</option><option>庭誼</option>
-                <option>沛璇</option><option>鈞智</option><option>祥玄</option><option>建良</option>
-                <option>凱令</option><option>靜怡</option><option>其他(請填於備註)</option>
-            </select>
+            <input type="text" id="user" placeholder="預約人姓名">
         </div>
         <div class="form-group">
-            <label>行程時間</label>
-            <select id="q_time">
-                <option>上午</option><option>下午</option><option>全天</option>
+            <label>車牌號碼</label>
+            <input type="text" id="carPlate" placeholder="例: ABC-1234">
+        </div>
+        <div class="form-group">
+            <label>預約時段</label>
+            <select id="timeSlot">
+                <option value="上午">上午 (Morning)</option>
+                <option value="下午">下午 (Afternoon)</option>
+                <option value="全天">全天 (Full Day)</option>
             </select>
         </div>
-        <div class="form-group"><label>案件名稱</label><input type="text" id="q_case"></div>
-        <div class="form-group"><label>車牌</label><input type="text" id="q_car"></div>
-        <div class="form-group"><label>備註</label><input type="text" id="q_note"></div>
-        <div class="btn-box">
-            <button class="btn-save" onclick="doSave()" id="btnText">確認儲存</button>
-            <button class="btn-reset" onclick="doReset()">重設</button>
+        
+        <div class="btn-group">
+            <button id="saveBtn" onclick="saveBooking()">儲存預約</button>
+            <button id="cancelBtn" onclick="resetForm()">取消修改</button>
         </div>
     </div>
 
-    <div class="cal-nav">
-        <button onclick="moveMonth(-1)">◀ 上個月</button>
-        <h3 id="monthTitle">2026 年 1 月</h3>
-        <button onclick="moveMonth(1)">下個月 ▶</button>
+    <div class="calendar-container">
+        <div class="calendar-header">
+            <button class="nav-btn" onclick="changeMonth(-1)">上個月</button>
+            <h2 id="currentMonthDisplay">2026年 1月</h2>
+            <button class="nav-btn" onclick="changeMonth(1)">下個月</button>
+        </div>
+        <div id="calendarGrid" class="calendar-grid">
+            </div>
     </div>
-    <table id="calTable">
-        <thead><tr><th>日</th><th>一</th><th>二</th><th>三</th><th>四</th><th>五</th><th>六</th></tr></thead>
-        <tbody id="calBody"></tbody>
-    </table>
 </div>
 
 <script>
-    let data = JSON.parse(localStorage.getItem('myCarData')) || [];
-    let viewYear = 2026;
-    let viewMonth = 0; // 0-11
+    let currentMonth = new Date().getFullYear() === 2026 ? new Date().getMonth() : 0; 
+    const year = 2026;
+    let bookings = JSON.parse(localStorage.getItem('carBookings')) || [];
 
-    // 初始化日期為今天 (或是2026年1月1日)
-    document.getElementById('q_date').value = "2026-01-01";
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid');
+        const monthTitle = document.getElementById('currentMonthDisplay');
+        grid.innerHTML = '';
+        monthTitle.innerText = `${year}年 ${currentMonth + 1}月`;
 
-    function doSave() {
-        const idx = document.getElementById('editIdx').value;
-        const obj = {
-            date: document.getElementById('q_date').value,
-            user: document.getElementById('q_user').value,
-            time: document.getElementById('q_time').value,
-            case: document.getElementById('q_case').value,
-            car: document.getElementById('q_car').value,
-            note: document.getElementById('q_note').value
-        };
+        ['日','一','二','三','四','五','六'].forEach(d => {
+            grid.innerHTML += `<div class="weekday">${d}</div>`;
+        });
 
-        if(!obj.case) { alert("請輸入案件名稱"); return; }
+        const firstDay = new Date(year, currentMonth, 1).getDay();
+        const daysInMonth = new Date(year, currentMonth + 1, 0).getDate();
 
-        if(idx === "-1") data.push(obj);
-        else data[idx] = obj;
+        for (let i = 0; i < firstDay; i++) {
+            grid.innerHTML += `<div class="day"></div>`;
+        }
 
-        localStorage.setItem('myCarData', JSON.stringify(data));
-        doReset();
-        render();
-    }
-
-    function doReset() {
-        document.getElementById('editIdx').value = "-1";
-        document.getElementById('q_case').value = "";
-        document.getElementById('q_car').value = "";
-        document.getElementById('q_note').value = "";
-        document.getElementById('btnText').innerText = "確認儲存";
-    }
-
-    function moveMonth(dir) {
-        viewMonth += dir;
-        if(viewMonth > 11) { viewMonth = 0; viewYear++; }
-        if(viewMonth < 0) { viewMonth = 11; viewYear--; }
-        render();
-    }
-
-    function render() {
-        const body = document.getElementById('calBody');
-        const title = document.getElementById('monthTitle');
-        body.innerHTML = "";
-        title.innerText = `${viewYear} 年 ${viewMonth + 1} 月`;
-
-        const firstDay = new Date(viewYear, viewMonth, 1).getDay();
-        const lastDate = new Date(viewYear, viewMonth + 1, 0).getDate();
-
-        let row = document.createElement("tr");
-        for(let i=0; i<firstDay; i++) row.appendChild(document.createElement("td"));
-
-        for(let d=1; d<=lastDate; d++) {
-            if(row.children.length === 7) {
-                body.appendChild(row);
-                row = document.createElement("tr");
-            }
-            const cell = document.createElement("td");
-            const dStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-            cell.innerHTML = `<div class="day-num">${d}</div>`;
-
-            data.forEach((item, index) => {
-                if(item.date === dStr) {
-                    const div = document.createElement("div");
-                    div.className = "event";
-                    div.innerHTML = `[${item.time}] ${item.user}<span class="del-x" onclick="doDel(event, ${index})">×</span>`;
-                    div.onclick = () => doEdit(index);
-                    cell.appendChild(div);
+        for (let d = 1; d <= daysInMonth; d++) {
+            const dateStr = `${year}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            let dayHtml = `<div class="day"><div class="day-number">${d}</div>`;
+            
+            bookings.forEach((ev, index) => {
+                if (ev.date === dateStr) {
+                    let colorClass = ev.timeSlot === '上午' ? 'event-morning' : (ev.timeSlot === '下午' ? 'event-afternoon' : 'event-allday');
+                    dayHtml += `<div class="event ${colorClass}" onclick="handleAction(${index})" title="點擊編輯或刪除">
+                        ${ev.content}(${ev.timeSlot})-${ev.user}
+                    </div>`;
                 }
             });
-            row.appendChild(cell);
-        }
-        while(row.children.length < 7) row.appendChild(document.createElement("td"));
-        body.appendChild(row);
-    }
-
-    function doEdit(i) {
-        const item = data[i];
-        document.getElementById('q_date').value = item.date;
-        document.getElementById('q_user').value = item.user;
-        document.getElementById('q_time').value = item.time;
-        document.getElementById('q_case').value = item.case;
-        document.getElementById('q_car').value = item.car;
-        document.getElementById('q_note').value = item.note;
-        document.getElementById('editIdx').value = i;
-        document.getElementById('btnText').innerText = "更新修改";
-        window.scrollTo(0,0);
-    }
-
-    function doDel(e, i) {
-        e.stopPropagation();
-        if(confirm("確定刪除？")) {
-            data.splice(i, 1);
-            localStorage.setItem('myCarData', JSON.stringify(data));
-            render();
+            dayHtml += `</div>`;
+            grid.innerHTML += dayHtml;
         }
     }
 
-    render();
+    function saveBooking() {
+        const idx = parseInt(document.getElementById('editIndex').value);
+        const data = {
+            date: document.getElementById('date').value,
+            projectName: document.getElementById('projectName').value,
+            content: document.getElementById('content').value,
+            user: document.getElementById('user').value,
+            carPlate: document.getElementById('carPlate').value,
+            timeSlot: document.getElementById('timeSlot').value
+        };
+
+        if(!data.content || !data.user) return alert("請填寫內容與預約者！");
+
+        if(idx > -1) bookings[idx] = data;
+        else bookings.push(data);
+
+        localStorage.setItem('carBookings', JSON.stringify(bookings));
+        resetForm();
+        renderCalendar();
+    }
+
+    function handleAction(index) {
+        const choice = prompt("請選擇操作：\n輸入 'D' 刪除預約\n輸入 'E' 編輯內容", "E");
+        
+        if (choice?.toUpperCase() === 'D') {
+            if (confirm("確定要刪除這筆預約嗎？")) {
+                bookings.splice(index, 1);
+                localStorage.setItem('carBookings', JSON.stringify(bookings));
+                renderCalendar();
+            }
+        } else if (choice?.toUpperCase() === 'E') {
+            const ev = bookings[index];
+            document.getElementById('date').value = ev.date;
+            document.getElementById('projectName').value = ev.projectName;
+            document.getElementById('content').value = ev.content;
+            document.getElementById('user').value = ev.user;
+            document.getElementById('carPlate').value = ev.carPlate;
+            document.getElementById('timeSlot').value = ev.timeSlot;
+            
+            document.getElementById('editIndex').value = index;
+            document.getElementById('formTitle').innerText = "📝 編輯預約";
+            document.getElementById('saveBtn').innerText = "儲存修改";
+            document.getElementById('cancelBtn').style.display = "block";
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('editIndex').value = "-1";
+        document.getElementById('formTitle').innerText = "新增預約";
+        document.getElementById('saveBtn').innerText = "儲存預約";
+        document.getElementById('cancelBtn').style.display = "none";
+        ['projectName','content','user','carPlate'].forEach(id => document.getElementById(id).value = '');
+    }
+
+    function changeMonth(step) {
+        currentMonth += step;
+        if(currentMonth < 0) currentMonth = 11;
+        if(currentMonth > 11) currentMonth = 0;
+        renderCalendar();
+    }
+
+    window.onload = renderCalendar;
 </script>
 
 </body>
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
-
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyAstWbl_m3LTigsNmIb_Ivn-f61fe-9dx8",
-    authDomain: "car-reserve-77481.firebaseapp.com",
-    projectId: "car-reserve-77481",
-    storageBucket: "car-reserve-77481.firebasestorage.app",
-    messagingSenderId: "320509130220",
-    appId: "1:320509130220:web:9dd685d906bec55b9cfcc9",
-    measurementId: "G-G4B91ZYEB5"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-</script>
 </html>
