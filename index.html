@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>行事曆與約車表</title>
+    <title>行事曆與約車表 - Firebase 版</title>
     <style>
-        /* 統一字體與基本設定 */
+        /* 保持你原本的 CSS 樣式不變 */
         :root {
             --primary-color: #1a73e8;
             --secondary-color: #fbbc04;
@@ -43,7 +43,6 @@
             align-items: flex-start;
         }
 
-        /* 左側表單美化 */
         .booking-form {
             background: var(--card-bg);
             padding: 25px;
@@ -111,7 +110,6 @@
         #cancelBtn { background: #f1f3f4; color: var(--text-main); display: none; }
         #cancelBtn:hover { background: #e8eaed; }
 
-        /* 右側日曆美化 */
         .calendar-container {
             flex: 1;
             background: var(--card-bg);
@@ -174,7 +172,6 @@
             color: #5f6368;
         }
 
-        /* 行程標籤樣式 */
         .event {
             font-size: 11px;
             padding: 6px 8px;
@@ -191,10 +188,9 @@
         }
         .event:hover { opacity: 0.85; transform: translateX(2px); }
 
-        .event-morning { background: #4285f4; } /* 藍色 */
-        .event-afternoon { background: #fbbc04; color: #3c4043; } /* 黃色 */
-        .event-allday { background: #34a853; } /* 綠色 */
-
+        .event-morning { background: #4285f4; }
+        .event-afternoon { background: #fbbc04; color: #3c4043; }
+        .event-allday { background: #34a853; }
     </style>
 </head>
 <body>
@@ -204,7 +200,7 @@
 <div class="container">
     <div class="booking-form">
         <h3 id="formTitle">新增預約</h3>
-        <input type="hidden" id="editIndex" value="-1">
+        <input type="hidden" id="editId" value="">
         
         <div class="form-group">
             <label>日期</label>
@@ -236,27 +232,54 @@
         </div>
         
         <div class="btn-group">
-            <button id="saveBtn" onclick="saveBooking()">儲存預約</button>
-            <button id="cancelBtn" onclick="resetForm()">取消修改</button>
+            <button id="saveBtn">儲存預約</button>
+            <button id="cancelBtn">取消修改</button>
         </div>
     </div>
 
     <div class="calendar-container">
         <div class="calendar-header">
-            <button class="nav-btn" onclick="changeMonth(-1)">上個月</button>
+            <button class="nav-btn" id="prevMonth">上個月</button>
             <h2 id="currentMonthDisplay">2026年 1月</h2>
-            <button class="nav-btn" onclick="changeMonth(1)">下個月</button>
+            <button class="nav-btn" id="nextMonth">下個月</button>
         </div>
-        <div id="calendarGrid" class="calendar-grid">
-            </div>
+        <div id="calendarGrid" class="calendar-grid"></div>
     </div>
 </div>
 
-<script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+    // Firebase 配置
+    const firebaseConfig = {
+        apiKey: "AIzaSyAstWbl_m3LTigsNmIb_Ivn-f61fe-9dx8",
+        authDomain: "car-reserve-77481.firebaseapp.com",
+        databaseURL: "https://car-reserve-77481-default-rtdb.firebaseio.com",
+        projectId: "car-reserve-77481",
+        storageBucket: "car-reserve-77481.firebasestorage.app",
+        messagingSenderId: "320509130220",
+        appId: "1:320509130220:web:9dd685d906bec55b9cfcc9",
+        measurementId: "G-G4B91ZYEB5"
+    };
+
+    // 初始化 Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const bookingsRef = ref(db, 'bookings');
+
+    // 變數設定
     let currentMonth = new Date().getFullYear() === 2026 ? new Date().getMonth() : 0; 
     const year = 2026;
-    let bookings = JSON.parse(localStorage.getItem('carBookings')) || [];
+    let bookingsData = {}; // 存放從 Firebase 抓取的資料
 
+    // 監聽 Firebase 資料變化
+    onValue(bookingsRef, (snapshot) => {
+        bookingsData = snapshot.val() || {};
+        renderCalendar();
+    });
+
+    // 渲染日曆
     function renderCalendar() {
         const grid = document.getElementById('calendarGrid');
         const monthTitle = document.getElementById('currentMonthDisplay');
@@ -278,10 +301,13 @@
             const dateStr = `${year}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
             let dayHtml = `<div class="day"><div class="day-number">${d}</div>`;
             
-            bookings.forEach((ev, index) => {
+            // 遍歷 Firebase 物件
+            Object.keys(bookingsData).forEach(key => {
+                const ev = bookingsData[key];
                 if (ev.date === dateStr) {
                     let colorClass = ev.timeSlot === '上午' ? 'event-morning' : (ev.timeSlot === '下午' ? 'event-afternoon' : 'event-allday');
-                    dayHtml += `<div class="event ${colorClass}" onclick="handleAction(${index})" title="點擊編輯或刪除">
+                    // 將 key 傳入點擊事件
+                    dayHtml += `<div class="event ${colorClass}" data-id="${key}" title="點擊編輯或刪除">
                         ${ev.content}(${ev.timeSlot})-${ev.user}
                     </div>`;
                 }
@@ -289,10 +315,16 @@
             dayHtml += `</div>`;
             grid.innerHTML += dayHtml;
         }
+
+        // 綁定事件給生成的 event
+        document.querySelectorAll('.event').forEach(el => {
+            el.addEventListener('click', () => handleAction(el.getAttribute('data-id')));
+        });
     }
 
-    function saveBooking() {
-        const idx = parseInt(document.getElementById('editIndex').value);
+    // 儲存/更新資料
+    async function saveBooking() {
+        const id = document.getElementById('editId').value;
         const data = {
             date: document.getElementById('date').value,
             projectName: document.getElementById('projectName').value,
@@ -304,25 +336,30 @@
 
         if(!data.content || !data.user) return alert("請填寫內容與預約者！");
 
-        if(idx > -1) bookings[idx] = data;
-        else bookings.push(data);
-
-        localStorage.setItem('carBookings', JSON.stringify(bookings));
-        resetForm();
-        renderCalendar();
+        try {
+            if(id) {
+                // 更新現有資料
+                await update(ref(db, `bookings/${id}`), data);
+            } else {
+                // 新增資料
+                await push(bookingsRef, data);
+            }
+            resetForm();
+        } catch (error) {
+            alert("儲存失敗：" + error.message);
+        }
     }
 
-    function handleAction(index) {
+    // 處理編輯或刪除
+    function handleAction(id) {
         const choice = prompt("請選擇操作：\n輸入 'D' 刪除預約\n輸入 'E' 編輯內容", "E");
+        const ev = bookingsData[id];
         
         if (choice?.toUpperCase() === 'D') {
             if (confirm("確定要刪除這筆預約嗎？")) {
-                bookings.splice(index, 1);
-                localStorage.setItem('carBookings', JSON.stringify(bookings));
-                renderCalendar();
+                remove(ref(db, `bookings/${id}`));
             }
         } else if (choice?.toUpperCase() === 'E') {
-            const ev = bookings[index];
             document.getElementById('date').value = ev.date;
             document.getElementById('projectName').value = ev.projectName;
             document.getElementById('content').value = ev.content;
@@ -330,7 +367,7 @@
             document.getElementById('carPlate').value = ev.carPlate;
             document.getElementById('timeSlot').value = ev.timeSlot;
             
-            document.getElementById('editIndex').value = index;
+            document.getElementById('editId').value = id;
             document.getElementById('formTitle').innerText = "📝 編輯預約";
             document.getElementById('saveBtn').innerText = "儲存修改";
             document.getElementById('cancelBtn').style.display = "block";
@@ -339,21 +376,25 @@
     }
 
     function resetForm() {
-        document.getElementById('editIndex').value = "-1";
+        document.getElementById('editId').value = "";
         document.getElementById('formTitle').innerText = "新增預約";
         document.getElementById('saveBtn').innerText = "儲存預約";
         document.getElementById('cancelBtn').style.display = "none";
         ['projectName','content','user','carPlate'].forEach(id => document.getElementById(id).value = '');
     }
 
-    function changeMonth(step) {
-        currentMonth += step;
-        if(currentMonth < 0) currentMonth = 11;
-        if(currentMonth > 11) currentMonth = 0;
+    // 綁定按鈕事件
+    document.getElementById('saveBtn').addEventListener('click', saveBooking);
+    document.getElementById('cancelBtn').addEventListener('click', resetForm);
+    document.getElementById('prevMonth').addEventListener('click', () => {
+        currentMonth = currentMonth === 0 ? 11 : currentMonth - 1;
         renderCalendar();
-    }
+    });
+    document.getElementById('nextMonth').addEventListener('click', () => {
+        currentMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+        renderCalendar();
+    });
 
-    window.onload = renderCalendar;
 </script>
 
 </body>
