@@ -345,7 +345,7 @@ Object.keys(bookingsData).forEach(key => {
         });
     }
 
-    // 儲存/更新資料
+   // 儲存/更新資料
     async function saveBooking() {
         const id = document.getElementById('editId').value;
         const data = {
@@ -353,18 +353,45 @@ Object.keys(bookingsData).forEach(key => {
             projectName: document.getElementById('projectName').value,
             content: document.getElementById('content').value,
             user: document.getElementById('user').value,
-            carPlate: document.getElementById('carPlate').value,
+            carPlate: document.getElementById('carPlate').value.trim().toUpperCase(), // 轉大寫避免誤判
             timeSlot: document.getElementById('timeSlot').value
         };
 
-        if(!data.content || !data.user) return alert("請填寫內容與預約者！");
+        if(!data.content || !data.user || !data.carPlate) return alert("請填寫內容、預約者與車牌！");
+
+        // --- 新增：衝突檢查邏輯 ---
+        let isConflict = false;
+        let conflictMsg = "";
+
+        Object.keys(bookingsData).forEach(key => {
+            // 如果是編輯模式，跳過比對自己
+            if (id && key === id) return;
+
+            const existing = bookingsData[key];
+            
+            // 檢查條件：日期相同 且 車牌相同
+            if (existing.date === data.date && existing.carPlate === data.carPlate) {
+                // 檢查時段重疊
+                // 1. 任一方是全天
+                // 2. 兩者時段完全相同
+                if (existing.timeSlot === "全天" || data.timeSlot === "全天" || existing.timeSlot === data.timeSlot) {
+                    isConflict = true;
+                    conflictMsg = `【預約衝突提醒】\n車牌：${data.carPlate}\n日期：${data.date}\n已有預約：${existing.timeSlot} (${existing.user})`;
+                }
+            }
+        });
+
+        if (isConflict) {
+            // 如果你希望「禁止預約」，請把下面的 confirm 改成 alert 並 return
+            const proceed = confirm(`${conflictMsg}\n\n是否仍要重複預約？`);
+            if (!proceed) return; 
+        }
+        // --- 衝突檢查結束 ---
 
         try {
             if(id) {
-                // 更新現有資料
                 await update(ref(db, `bookings/${id}`), data);
             } else {
-                // 新增資料
                 await push(bookingsRef, data);
             }
             resetForm();
