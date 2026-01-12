@@ -308,8 +308,8 @@
                     let colorClass = ev.timeSlot === '上午' ? 'event-morning' : (ev.timeSlot === '下午' ? 'event-afternoon' : 'event-allday');
                     // 將 key 傳入點擊事件
                     dayHtml += `<div class="event ${colorClass}" data-id="${key}" title="點擊編輯或刪除">
-                        ${ev.content}(${ev.timeSlot})-${ev.user}
-                    </div>`;
+            ${ev.content}(${ev.user})-${ev.carPlate}(${ev.timeSlot})
+        </div>`;
                 }
             });
             dayHtml += `</div>`;
