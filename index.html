@@ -16,6 +16,22 @@
             --text-sub: #70757a;
             --font-family: "Segoe UI", "Microsoft JhengHei", "微軟正黑體", sans-serif;
         }
+/* 新增：計畫案件名稱的小字樣式 */
+.event-project-name {
+    display: block;
+    font-size: 9px;
+    color: #ffcccc; /* 淺紅色，確保在深色背景上也清晰 */
+    margin-top: 2px;
+    font-weight: normal;
+    border-top: 1px dotted rgba(255,255,255,0.3);
+    padding-top: 2px;
+}
+
+/* 調整原本 event 的高度，確保放得下兩行字 */
+.event {
+    white-space: normal; /* 允許折行顯示案件名稱 */
+    line-height: 1.3;
+}
 
         body {
             font-family: var(--font-family);
@@ -302,16 +318,23 @@
             let dayHtml = `<div class="day"><div class="day-number">${d}</div>`;
             
             // 遍歷 Firebase 物件
-            Object.keys(bookingsData).forEach(key => {
-                const ev = bookingsData[key];
-                if (ev.date === dateStr) {
-                    let colorClass = ev.timeSlot === '上午' ? 'event-morning' : (ev.timeSlot === '下午' ? 'event-afternoon' : 'event-allday');
-                    // 將 key 傳入點擊事件
-                    dayHtml += `<div class="event ${colorClass}" data-id="${key}" title="點擊編輯或刪除">
-            ${ev.content}(${ev.user})-${ev.carPlate}(${ev.timeSlot})
-        </div>`;
-                }
-            });
+Object.keys(bookingsData).forEach(key => {
+    const ev = bookingsData[key];
+    if (ev.date === dateStr) {
+        let colorClass = ev.timeSlot === '上午' ? 'event-morning' : (ev.timeSlot === '下午' ? 'event-afternoon' : 'event-allday');
+        
+        // 組合內容：行程內容(預約者)-車牌號碼(預約時段)
+        const mainInfo = `${ev.content}(${ev.user})-${ev.carPlate}(${ev.timeSlot})`;
+        // 組合下方小字：計畫案件名稱
+        const projectInfo = ev.projectName ? `<div class="event-project-name">${ev.projectName}</div>` : '';
+
+        dayHtml += `
+            <div class="event ${colorClass}" data-id="${key}" title="案名：${ev.projectName}">
+                <div>${mainInfo}</div>
+                ${projectInfo}
+            </div>`;
+    }
+});
             dayHtml += `</div>`;
             grid.innerHTML += dayHtml;
         }
